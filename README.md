@@ -32,3 +32,12 @@ inchi_key = Chem.MolToInchiKey(parent)
 mw = Descriptors.MolWt(parent)
 
 Все данные выгружены без неточных значений, пустых строк и повторений в файл egfr_activities_std.xlsx
+egfr_qsar_dataset_all.parquet — 12 566 строк 
+Это основной агрегированный QSAR-датасет.
+Он содержит данные по:
+WT EGFR; мутантным вариантам EGFR; вариантам с неопределённой мутацией.
+
+Главная идея: одна строка = одна уникальная пара
+
+data/processed/egfr_qsar_dataset_wt.parquet - это подмножество файла, который мы рассматривали вверху. 
+contradictions.csv — 424 строки (std_pIC50 > 1.0)
