@@ -23,3 +23,10 @@ assay_type == 'B'	не-биохимические тесты	1 265
 confidence_score >= 8	ненадёжные assay	0 (не сработал — все assay и так надёжные)
 standard_value > 0	физически бессмысленные нули	1
 canonical_smiles not NaN	записи без структуры	17
+
+Файл 04_standardize_smiles.py - 
+Bemis-Murcko scaffold - структурный каркас молекулы — кольца и линкеры без боковых заместителей, вычисляется алгоритмом RDKit
+InChIKey - короткий, фиксированной длины (27 символов) хэш-идентификатор молекулы, производный от более длинного InChI (IUPAC International Chemical Identifier)
+inchi_key = Chem.MolToInchiKey(parent)
+Молекулярная масса (MolWt) - сумма атомных масс всех атомов в молекуле (с учётом изотопного состава по умолчанию — природного распределения изотопов, если не указано иное явно)
+mw = Descriptors.MolWt(parent)
