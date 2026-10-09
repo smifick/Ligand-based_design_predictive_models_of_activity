@@ -9,14 +9,13 @@
 from __future__ import annotations
 
 import logging
-import os
 import time
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 
-from fp_transformer import SmilesToFingerprint
+from model.feature.fp_transformer import SmilesToFingerprint
 
 # ---------------------------------------------------------------------------
 # Конфигурация
