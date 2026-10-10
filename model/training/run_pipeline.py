@@ -14,8 +14,4 @@ def run_pipeline(config, train, val):
     predictions = pipeline.predict(X_val)
     metrics = calculate_metrics(y_val, predictions)
 
-    return pipeline, {
-        "metrics": metrics,
-        "predictions": predictions,
-        "y_true": y_val,
-    }
+    return pipeline, metrics, predictions, y_val
