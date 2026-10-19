@@ -5,7 +5,6 @@ from model.evalution import calculate_metrics
 
 def run_pipeline(config, train, val):
     pipeline = build_pipeline(config)
-
     X_train, y_train = get_xy(train)
     X_val, y_val = get_xy(val)
 

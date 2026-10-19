@@ -3,28 +3,30 @@ import pandas as pd
 from model.training import run_pipeline
 from model.clearML.clearML import init_experiment, log_results
 from model.data import load_data
+from model.clearML.resolve_model_config import resolve_model_config
+from model.clearML.resolve_descriptor_config import resolve_descriptor_config
 
 def main():
+
+    task, selection, overrides = init_experiment()
+
+    model_config = resolve_model_config(
+        selection["model"],
+        overrides.get("model", {}),
+    )
+
+    descriptor_config = resolve_descriptor_config(
+        selection["descriptor"],
+        overrides.get("descriptor", {}),
+    )
+
     config = {
-        "descriptor": {
-            "fp_type": "morgan",
-            "radius": 2,
-            "n_bits": 2048,
-            "n_jobs": 4,
-            "on_error": "raise",
-        },
-        "model": {
-            "name": "catboost",
-            "iterations": 500,
-            "depth": 6,
-            "learning_rate": 0.05,
-        },
+        "model": model_config,
+        "descriptor": descriptor_config,
         "training": {
-            "seed": 67,
+            "seed": selection["seed"],
         },
     }
-
-    task, config = init_experiment(config)
 
     train_data,val_data, test_data = load_data()
 

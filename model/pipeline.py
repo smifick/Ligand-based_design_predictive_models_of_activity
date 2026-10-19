@@ -5,6 +5,9 @@ from model.feature import SmilesToFingerprint
 
 
 def build_pipeline(config):
+
+    #preprocessing = ... - препроцессинг данных, конфигурируемый датасет
+
     descriptor = SmilesToFingerprint(
         **config["descriptor"]
     )
@@ -12,6 +15,7 @@ def build_pipeline(config):
     model = create_model(config["model"])
 
     return Pipeline([
+        #('preprocessing', preprocessing)
         ("descriptor", descriptor),
         ("model", model)
     ])

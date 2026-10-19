@@ -2,29 +2,31 @@ import numpy as np
 from clearml import Task
 import pandas as pd
 
-def init_experiment(config: dict):
+def init_experiment(config: dict = None):
     task = Task.init(
         project_name="Molecules",
-        task_name="Ctb + morgan",
+        task_name="OneShot",
         output_uri=True,
     )
 
-    config["descriptor"] = task.connect(
-        config["descriptor"],
-        name="Descriptor",
+    selection = task.connect(
+        {
+            "model": "catboost",
+            "descriptor": "morgan",
+            "seed": 67,
+        },
+        name="Selection",
     )
 
-    config["model"] = task.connect(
-        config["model"],
-        name="Model",
+    overrides = task.connect_configuration(
+        {
+            "model": {},
+            "descriptor": {},
+        },
+        name="Overrides",
     )
 
-    config["training"] = task.connect(
-        config["training"],
-        name="Training",
-    )
-
-    return task, config
+    return task, selection, overrides
 
 
 def log_results(task, metrics, y_true, y_pred):
