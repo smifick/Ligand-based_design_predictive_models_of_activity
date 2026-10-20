@@ -8,8 +8,11 @@ def build_pipeline(config):
 
     #preprocessing = ... - препроцессинг данных, конфигурируемый датасет
 
+    descriptor_config = config["descriptor"]
+
     descriptor = SmilesToFingerprint(
-        **config["descriptor"]
+        fp_type = descriptor_config["name"],
+        **descriptor_config["config"]
     )
 
     model = create_model(config["model"])
@@ -17,5 +20,7 @@ def build_pipeline(config):
     return Pipeline([
         #('preprocessing', preprocessing)
         ("descriptor", descriptor),
-        ("model", model)
-    ])
+        ("model", model),
+
+        ]
+    )

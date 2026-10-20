@@ -213,6 +213,11 @@ def launch_experiment(
         source_task=base_task_id.strip(),
         name=f"{model} + {descriptor} | seed={seed}",
     )
+    cloned.set_script(
+        branch="models",
+        commit="",  # сбрасываем закреплённый коммит
+    )
+    cloned.set_packages("")
     cloned.set_parameter("Selection/model", model)
     cloned.set_parameter("Selection/descriptor", descriptor)
     cloned.set_parameter("Selection/seed", seed)

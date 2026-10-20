@@ -7,9 +7,19 @@ from sklearn.metrics import (
 )
 
 
-def calculate_metrics(y_true, y_pred):
-    return {
-        "mae": float(mean_absolute_error(y_true, y_pred)),
-        "rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))),
-        "r2": float(r2_score(y_true, y_pred)),
+def calculate_metrics(targets, predictions):
+
+    results = {
+        'train': dict(),
+        'val': dict(),
+        'test': dict()
     }
+
+    for key in results.keys():
+        results[key] = {
+            "mae": float(mean_absolute_error(targets[key], predictions[key])),
+            "rmse": float(np.sqrt(mean_squared_error(targets[key], predictions[key]))),
+            "r2": float(r2_score(targets[key], predictions[key])),
+        }
+
+    return results

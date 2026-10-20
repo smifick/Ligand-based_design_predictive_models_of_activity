@@ -4,7 +4,6 @@ from lightgbm import LGBMRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.svm import SVR
-from ..clearML.resolve_model_config import resolve_model_config
 
 
 MODEL_REGISTRY = {

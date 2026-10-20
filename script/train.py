@@ -38,13 +38,14 @@ def main():
     print("Validation:", val_data.shape)
     print("Test:", test_data.shape)
 
-    pipeline, metrics, predictions, y_true = run_pipeline(
+    pipeline, metrics, predictions, targets = run_pipeline(
         config,
         train_data,
-        val_data
+        val_data,
+        test_data,
     )
 
-    log_results(task, metrics, y_true, predictions)
+    log_results(task, metrics, targets, predictions)
 
     print(metrics)
 
