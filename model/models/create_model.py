@@ -17,12 +17,9 @@ MODEL_REGISTRY = {
 }
 
 def create_model(config):
-    name = config["name"]
-    config = config["overrides"]
 
-    resolved_config = resolve_model_config(name, config)
-    name = resolved_config["name"]
-    config = resolved_config["config"]
+    name = config["name"]
+    config = config["config"]
 
     model_class = MODEL_REGISTRY[name]
 

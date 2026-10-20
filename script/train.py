@@ -1,4 +1,8 @@
-import pandas as pd
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from model.training import run_pipeline
 from model.clearML.clearML import init_experiment, log_results
@@ -28,7 +32,7 @@ def main():
         },
     }
 
-    train_data,val_data, test_data = load_data()
+    train_data, val_data, test_data = load_data()
 
     print("Train:", train_data.shape)
     print("Validation:", val_data.shape)
