@@ -1,28 +1,55 @@
-"""
-SmilesToFingerprint — sklearn-совместимый трансформер для генерации
-молекулярных фингерпринтов из SMILES-строк.
-
-Поддерживает: Morgan (ECFP), MACCS, RDKit, AtomPair, Torsion, Avalon.
-Совместим с sklearn Pipeline, GridSearchCV, MLflow, Optuna.
-"""
 
 from __future__ import annotations
 
 import logging
-from typing import Iterable, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 from joblib import Parallel, delayed
 from rdkit import Chem, RDLogger
-from rdkit.Chem import rdFingerprintGenerator
-from rdkit.Chem import MACCSkeys, rdMolDescriptors
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
-# Отключаем спам RDKit в stdout (можно включить обратно через logging)
+from .fp_generators import (
+    FpCallable,
+    FpFactory,
+    make_atompair,
+    make_avalon,
+    make_maccs,
+    make_morgan,
+    make_rdkit,
+    make_torsion,
+)
+
 RDLogger.DisableLog("rdApp.*")
 
 logger = logging.getLogger(__name__)
+
+FP_GENERATORS: dict[str, FpFactory] = {
+    "morgan": make_morgan,
+    "rdkit": make_rdkit,
+    "atompair": make_atompair,
+    "torsion": make_torsion,
+    "maccs": make_maccs,
+    "avalon": make_avalon,
+}
+
+
+def _resolve_fp_callable(
+    fp_type: str,
+    radius: int,
+    n_bits: int,
+    use_features: bool,
+) -> FpCallable:
+    try:
+        factory = FP_GENERATORS[fp_type]
+    except KeyError as exc:
+        known = ", ".join(sorted(FP_GENERATORS))
+        raise ValueError(
+            f"Unknown fp_type: {fp_type!r}. Known: {known}"
+        ) from exc
+    return factory(radius, n_bits, use_features)
+
 
 def _smiles_to_fp(
     smiles: str,
@@ -31,7 +58,6 @@ def _smiles_to_fp(
     n_bits: int,
     use_features: bool,
 ) -> Optional[np.ndarray]:
-    """Возвращает numpy-вектор фингерпринта или None, если SMILES невалиден."""
     if not isinstance(smiles, str) or not smiles:
         return None
 
@@ -39,86 +65,15 @@ def _smiles_to_fp(
     if mol is None:
         return None
 
-    if fp_type == "morgan":
-        # В новых RDKit useFeatures заменён на atomInvariantsGenerator
-        if use_features:
-            gen = rdFingerprintGenerator.GetMorganGenerator(
-                radius=radius,
-                fpSize=n_bits,
-                atomInvariantsGenerator=rdFingerprintGenerator.GetMorganFeatureAtomInvGen(),
-            )
-        else:
-            gen = rdFingerprintGenerator.GetMorganGenerator(
-                radius=radius,
-                fpSize=n_bits,
-            )
-        fp = gen.GetFingerprint(mol)
-
-    elif fp_type == "rdkit":
-        gen = rdFingerprintGenerator.GetRDKitFPGenerator(fpSize=n_bits)
-        fp = gen.GetFingerprint(mol)
-
-    elif fp_type == "atompair":
-        gen = rdFingerprintGenerator.GetAtomPairGenerator(fpSize=n_bits)
-        fp = gen.GetFingerprint(mol)
-
-    elif fp_type == "torsion":
-        gen = rdFingerprintGenerator.GetTopologicalTorsionGenerator(fpSize=n_bits)
-        fp = gen.GetFingerprint(mol)
-
-    elif fp_type == "maccs":
-        # MACCS всегда 167 бит — n_bits игнорируется
-        fp = MACCSkeys.GenMACCSKeys(mol)
-
-    elif fp_type == "avalon":
-        from rdkit.Avalon import pyAvalonTools
-        fp = pyAvalonTools.GetAvalonFP(mol, nBits=n_bits)
-
-    else:
-        raise ValueError(f"Unknown fp_type: {fp_type!r}")
+    get_fp = _resolve_fp_callable(fp_type, radius, n_bits, use_features)
+    fp = get_fp(mol)
 
     arr = np.zeros((fp.GetNumBits(),), dtype=np.uint8)
     Chem.DataStructs.ConvertToNumpyArray(fp, arr)
     return arr
 
 
-# ---------------------------------------------------------------------------
-# sklearn-совместимый трансформер
-# ---------------------------------------------------------------------------
 class SmilesToFingerprint(BaseEstimator, TransformerMixin):
-    """
-    Генерирует молекулярные фингерпринты из SMILES.
-
-    Параметры
-    ----------
-    smiles_col : str, default='std_smiles'
-        Имя колонки с SMILES. Используется только если на вход подан DataFrame.
-        Если подан Series/ndarray — колонка игнорируется.
-    fp_type : {'morgan','rdkit','atompair','torsion','maccs','avalon'}
-        Тип фингерпринта.
-    radius : int, default=2
-        Радиус для Morgan (2 == ECFP4).
-    n_bits : int, default=2048
-        Длина вектора (игнорируется для MACCS).
-    use_features : bool, default=False
-        Для Morgan: использовать фармакофорные фичи вместо атомных (FCFP).
-    n_jobs : int, default=-1
-        Число процессов joblib. -1 = все ядра.
-    on_error : {'zero','raise','drop'}
-        Что делать с невалидными SMILES:
-          - 'zero'  — вернуть вектор из нулей (безопасно для пайплайна);
-          - 'raise' — бросить исключение;
-          - 'drop'  — пометить как NaN (для последующей фильтрации).
-    verbose : int, default=0
-        Уровень логирования.
-
-    Атрибуты
-    --------
-    n_features_ : int
-        Размер выходного вектора.
-    n_invalid_ : int
-        Сколько SMILES не удалось распарсить во время transform.
-    """
 
     def __init__(
         self,
@@ -140,9 +95,7 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
         self.on_error = on_error
         self.verbose = verbose
 
-    # ---- helpers ----------------------------------------------------------
     def _extract_smiles(self, X) -> Sequence[str]:
-        """Достаёт список SMILES из DataFrame/Series/list/ndarray."""
         # pandas DataFrame
         if hasattr(X, "columns") and self.smiles_col in getattr(X, "columns", []):
             return X[self.smiles_col].tolist()
@@ -156,10 +109,7 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
             return 167
         return self.n_bits
 
-    # ---- sklearn API ------------------------------------------------------
     def fit(self, X, y=None):
-        """Ничего не обучает, только фиксирует размерность. Возвращает self."""
-        # Валидируем параметры «на сухую»: генерируем один фейковый FP
         probe = _smiles_to_fp("C", self.fp_type, self.radius, self.n_bits, self.use_features)
         if probe is None:
             raise RuntimeError("Не удалось сгенерировать пробный фингерпринт.")
@@ -190,8 +140,6 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
 
         if n_invalid and self.on_error == "raise":
             raise ValueError(f"{n_invalid} SMILES не удалось распарсить.")
-
-        # Собираем матрицу
         out = np.zeros((len(results), n_features), dtype=np.uint8)
         for i, r in enumerate(results):
             if r is None:
@@ -203,7 +151,6 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
 
         return out
 
-    # ---- удобный доступ к именам признаков --------------------------------
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         check_is_fitted(self, ["n_features_"])
         return np.array([f"{self.fp_type}_{i}" for i in range(self.n_features_)], dtype=object)
