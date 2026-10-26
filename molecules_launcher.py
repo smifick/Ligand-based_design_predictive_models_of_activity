@@ -215,7 +215,8 @@ def launch_experiment(
     )
     cloned.set_script(
         branch="models",
-        commit="",  # сбрасываем закреплённый коммит
+        commit="",
+        diff="",
     )
     cloned.set_packages("")
     cloned.set_parameter("Selection/model", model)
