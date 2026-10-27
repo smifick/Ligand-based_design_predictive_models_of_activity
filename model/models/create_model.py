@@ -1,4 +1,5 @@
 from catboost import CatBoostRegressor
+from sklearn.model_selection import GridSearchCV
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -11,7 +12,7 @@ MODEL_REGISTRY = {
     "xgboost": XGBRegressor,
     "lightgbm": LGBMRegressor,
     "random_forest": RandomForestRegressor,
-    "svm": SVR,
+    "svr": SVR,
     "ridge": Ridge,
 }
 

@@ -1,8 +1,12 @@
 from catboost import CatBoostRegressor
+from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Ridge
 from sklearn.svm import SVR
 
 
+#СЛИШКОМ ПОЗДНО понял что можно просто было параметры у моделей тащить, а не вручную переписывать. Блин. Ну так можно хотя бы дефолтные настройки подогнать под наш проект
 MODEL_REGISTRY = {
     'catboost':{
         'model': CatBoostRegressor,
@@ -51,7 +55,105 @@ MODEL_REGISTRY = {
             'max_samples': None
         },
     },
-    #TODO остальные модели
+    'xgboost':{
+        'model': XGBRegressor,
+        'default':{
+            "objective": "reg:squarederror",
+            "n_estimators": 300,
+            "max_depth": 6,
+            "learning_rate": 0.1,
+            "min_child_weight": 1,
+            "gamma": 0.0,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "colsample_bylevel": 1.0,
+            "colsample_bynode": 1.0,
+            "reg_alpha": 0.0,
+            "reg_lambda": 1.0,
+            "booster": "gbtree",
+            "tree_method": "hist",
+            "max_bin": 256,
+            "max_leaves": 0,
+            "grow_policy": "depthwise",
+            "max_delta_step": 0,
+            "base_score": None,
+            "random_state": 42,
+            "n_jobs": -1,
+            "verbosity": 1,
+            "device": "cpu",
+            "sampling_method": "uniform",
+            "scale_pos_weight": None,
+            "num_parallel_tree": 1,
+            "monotone_constraints": None,
+            "interaction_constraints": None,
+            "importance_type": "gain",
+            "eval_metric": "rmse",
+            "early_stopping_rounds": None,
+            "callbacks": None,
+            "enable_categorical": False,
+            "feature_types": None,
+            "feature_weights": None,
+            "max_cat_to_onehot": None,
+            "max_cat_threshold": None,
+            "multi_strategy": None,
+            "validate_parameters": True,
+            "missing": float("nan"),
+        },
+    },
+    'lightgbm':{
+        'model': LGBMRegressor,
+        'default':{
+            "boosting_type": "gbdt",
+            "num_leaves": 31,
+            "max_depth": -1,
+            "learning_rate": 0.1,
+            "n_estimators": 100,
+            "subsample_for_bin": 200000,
+            "objective": "regression",
+            "class_weight": None,
+            "min_split_gain": 0.0,
+            "min_child_weight": 0.001,
+            "min_child_samples": 20,
+            "subsample": 1.0,
+            "subsample_freq": 0,
+            "colsample_bytree": 1.0,
+            "reg_alpha": 0.0,
+            "reg_lambda": 0.0,
+            "random_state": 42,
+            "n_jobs": -1,
+            "importance_type": "split",
+        },
+    },
+
+    'ridge':{
+        'model': Ridge,
+        'default': {
+            "alpha": 1.0,
+            "fit_intercept": True,
+            "copy_X": True,
+            "max_iter": 1000,
+            "tol": 1e-4,
+            "solver": "auto",
+            "positive": False,
+            "random_state": 42,
+        },
+    },
+    'svr':{
+        'model': SVR,
+        'default': {
+            "kernel": "rbf",
+            "degree": 3,
+            "gamma": "scale",
+            "coef0": 0.0,
+            "tol": 1e-3,
+            "C": 1.0,
+            "epsilon": 0.1,
+            "shrinking": True,
+            "cache_size": 200,
+            "verbose": False,
+            "max_iter": -1,
+        },
+    }
 }
 
 COMMON_DESCRIPTOR_DEFAULTS = {

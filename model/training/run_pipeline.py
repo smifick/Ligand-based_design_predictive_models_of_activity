@@ -11,10 +11,6 @@ def run_pipeline(config, train, val, test):
     X_test, y_test = get_xy(test)
 
 
-    preprocessing = pipeline.named_steps["descriptor"]
-    X_train_fp = preprocessing.fit_transform(X_train, y_train)
-    X_val_fp = preprocessing.transform(X_val)
-
     pipeline.fit(
         X_train,
         y_train,

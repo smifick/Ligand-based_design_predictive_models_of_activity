@@ -2,19 +2,21 @@ import numpy as np
 from clearml import Task
 import pandas as pd
 
-def init_experiment(config: dict = None):
+def init_experiment(
+        project_name: str = "Алгоритмы ИИ и ML в дизайне противоопухолевых лекарств",
+        task_name: str ='Task_N',
+        config: dict = { "model": "catboost", "descriptor": "morgan", "seed": 67}
+):
+
     task = Task.init(
-        project_name="Molecules",
-        task_name="OneShot",
+        project_name=project_name,
+        task_name=task_name,
         output_uri=True,
     )
 
+
     selection = task.connect(
-        {
-            "model": "catboost",
-            "descriptor": "morgan",
-            "seed": 67,
-        },
+        mutable=config,
         name="Selection",
     )
 
@@ -129,4 +131,5 @@ def log_results(task, metrics, targets, predictions):
             name=f"{split}_predictions",
             artifact_object=predictions_df,
         )
+    print(metrics)
 
