@@ -38,11 +38,14 @@ SMILES_CANDIDATES = ["std_smiles", "canonical_smiles", "smiles", "SMILES"]
 # Параметры фингерпринта
 FP_PARAMS = dict(
     fp_type="morgan",   # ECFP4
-    radius=2,
-    n_bits=2048,
-    n_jobs=2,          # все ядра
+    n_jobs=2,
     on_error="zero",    # невалидные SMILES -> нулевой вектор
     verbose=1,
+    fp_params={
+        "radius": 2,
+        "n_bits": 2048,
+        "use_features": False,
+    },
 )
 
 logging.basicConfig(
@@ -106,7 +109,11 @@ def process_one_file(filepath: Path, output_dir: Path) -> Optional[Path]:
         return None
 
     # 4. Генерируем фингерпринты
-    logger.info("Генерация фингерпринтов (%s, %d бит)...", FP_PARAMS["fp_type"], FP_PARAMS["n_bits"])
+    logger.info(
+        "Генерация фингерпринтов (%s, %s)...",
+        FP_PARAMS["fp_type"],
+        FP_PARAMS["fp_params"],
+    )
     transformer = SmilesToFingerprint(
         smiles_col=smiles_col,
         **FP_PARAMS,
