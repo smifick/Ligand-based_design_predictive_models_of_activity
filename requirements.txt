@@ -1,0 +1,32 @@
+# Molecules / EGFR — training, evaluation and Streamlit launcher
+# Python 3.12 (Windows / ClearML Agent)
+
+# Core scientific stack
+numpy>=1.26,<3
+pandas>=2.2,<3
+scipy>=1.13,<2
+scikit-learn>=1.6,<2
+joblib>=1.4,<2
+
+# Molecular fingerprints
+rdkit>=2024.9
+
+# Regression models
+catboost>=1.2.8,<2
+xgboost>=2.1,<4
+lightgbm>=4.5,<5
+
+# Experiment tracking and launcher
+clearml>=2.0,<3
+streamlit>=1.40,<2
+
+# Data files: .xlsx and .parquet
+openpyxl>=3.1,<4
+pyarrow>=17
+
+# Experiment visualizations
+plotly>=5.24,<7
+matplotlib>=3.9,<4
+
+# ChEMBL REST API data loading
+requests>=2.32,<3
