@@ -5,6 +5,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.svm import SVR
 
+from model.feature.fp_generators import DESCRIPTOR_DEFAULTS
+
 
 #СЛИШКОМ ПОЗДНО понял что можно просто было параметры у моделей тащить, а не вручную переписывать. Блин. Ну так можно хотя бы дефолтные настройки подогнать под наш проект
 MODEL_REGISTRY = {
@@ -165,13 +167,9 @@ COMMON_DESCRIPTOR_DEFAULTS = {
 
 
 DESCRIPTOR_REGISTRY = {
-    "morgan": {
-
-        'name': 'morgan',
-        'default':{
-            "radius": 2,
-            "n_bits": 2048,
-            "use_features": False,
-        }
-    },
+    name: {
+        "name": name,
+        "default": dict(params),
+    }
+    for name, params in DESCRIPTOR_DEFAULTS.items()
 }

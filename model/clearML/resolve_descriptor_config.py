@@ -5,15 +5,11 @@ def resolve_descriptor_config(name, overrides):
     if name not in DESCRIPTOR_REGISTRY:
         raise ValueError(f"Unknown descriptor: {name}")
 
-    default = DESCRIPTOR_REGISTRY[name]["default"]
-
-    config = default.copy()
-
-    for key, value in overrides.items():
-        if key not in config:
-            config[key] = value
-        else:
-            config[key] = overrides[key]
+    config = {
+        **COMMON_DESCRIPTOR_DEFAULTS,
+        **DESCRIPTOR_REGISTRY[name]["default"],
+    }
+    config.update(overrides)
 
     return {
         'name': name,

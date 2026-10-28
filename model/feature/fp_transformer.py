@@ -35,12 +35,7 @@ FP_GENERATORS: dict[str, FpFactory] = {
 }
 
 
-def _resolve_fp_callable(
-    fp_type: str,
-    radius: int,
-    n_bits: int,
-    use_features: bool,
-) -> FpCallable:
+def _resolve_fp_callable(fp_type: str, fp_params: dict) -> FpCallable:
     try:
         factory = FP_GENERATORS[fp_type]
     except KeyError as exc:
@@ -48,15 +43,13 @@ def _resolve_fp_callable(
         raise ValueError(
             f"Unknown fp_type: {fp_type!r}. Known: {known}"
         ) from exc
-    return factory(radius, n_bits, use_features)
+    return factory(fp_params)
 
 
 def _smiles_to_fp(
     smiles: str,
     fp_type: str,
-    radius: int,
-    n_bits: int,
-    use_features: bool,
+    fp_params: dict,
 ) -> Optional[np.ndarray]:
     if not isinstance(smiles, str) or not smiles:
         return None
@@ -65,8 +58,7 @@ def _smiles_to_fp(
     if mol is None:
         return None
 
-    get_fp = _resolve_fp_callable(fp_type, radius, n_bits, use_features)
-    fp = get_fp(mol)
+    fp = _resolve_fp_callable(fp_type, fp_params)(mol)
 
     arr = np.zeros((fp.GetNumBits(),), dtype=np.uint8)
     Chem.DataStructs.ConvertToNumpyArray(fp, arr)
@@ -79,21 +71,17 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
         self,
         smiles_col: str = "std_smiles",
         fp_type: str = "morgan",
-        radius: int = 2,
-        n_bits: int = 2048,
-        use_features: bool = False,
         n_jobs: int = -1,
         on_error: str = "zero",
         verbose: int = 0,
+        fp_params: Optional[dict] = None,
     ):
         self.smiles_col = smiles_col
         self.fp_type = fp_type
-        self.radius = radius
-        self.n_bits = n_bits
-        self.use_features = use_features
         self.n_jobs = n_jobs
         self.on_error = on_error
         self.verbose = verbose
+        self.fp_params = fp_params
 
     def _extract_smiles(self, X) -> Sequence[str]:
         # pandas DataFrame
@@ -104,13 +92,11 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
             return X.tolist()
         return list(X)
 
-    def _resolve_n_features(self) -> int:
-        if self.fp_type == "maccs":
-            return 167
-        return self.n_bits
+    def _fp_params(self) -> dict:
+        return {} if self.fp_params is None else dict(self.fp_params)
 
     def fit(self, X, y=None):
-        probe = _smiles_to_fp("C", self.fp_type, self.radius, self.n_bits, self.use_features)
+        probe = _smiles_to_fp("C", self.fp_type, self._fp_params())
         if probe is None:
             raise RuntimeError("Не удалось сгенерировать пробный фингерпринт.")
         self.n_features_ = probe.shape[0]
@@ -122,14 +108,13 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
 
         smiles_list = self._extract_smiles(X)
         n_features = self.n_features_
+        fp_params = self._fp_params()
 
         if self.verbose:
             logger.info("Генерация %s FP для %d молекул...", self.fp_type, len(smiles_list))
 
         results = Parallel(n_jobs=self.n_jobs, backend="threading")(
-            delayed(_smiles_to_fp)(
-                s, self.fp_type, self.radius, self.n_bits, self.use_features
-            )
+            delayed(_smiles_to_fp)(s, self.fp_type, fp_params)
             for s in smiles_list
         )
 
