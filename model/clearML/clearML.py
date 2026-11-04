@@ -5,7 +5,7 @@ import pandas as pd
 def init_experiment(
         project_name: str = "Алгоритмы ИИ и ML в дизайне противоопухолевых лекарств",
         task_name: str ='Task_N',
-        config: dict = { "model": "catboost", "descriptor": "morgan", "seed": 67}
+        config: dict = { "model": "gsSvr", "descriptor": "morgan", "seed": 67}
 ):
 
     task = Task.init(
