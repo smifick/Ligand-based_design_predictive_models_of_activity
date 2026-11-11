@@ -1,0 +1,14 @@
+{
+    "result_folder": "results",
+    "database": "BindingDB",
+    "target": "HER1",
+    "hyperparam": {
+        "batchsize": 128,
+        "dropout": 0.6000000000000001,
+        "fingerprint_dim": 275,
+        "lr": 4.568313285881608e-05,
+        "num_layers": 1,
+        "num_timesteps": 3,
+        "weight_decay": 0.00033190156230119053
+    }
+}

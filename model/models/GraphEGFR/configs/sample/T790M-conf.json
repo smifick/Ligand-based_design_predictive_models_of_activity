@@ -1,0 +1,11 @@
+{
+    "database": "LigEGFR",
+    "target": "MTL_ALL_MT",
+    "hyperparam": {
+        "num_atom_features": 75,
+        "edge_dim": 11,
+        "num_layers": 1,
+        "fingerprint_dim": 275,
+        "num_timesteps": 3
+    }
+}

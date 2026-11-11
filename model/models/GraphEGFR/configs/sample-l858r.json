@@ -1,0 +1,18 @@
+{    
+    "result_folder": "results",
+    "database": "LigEGFR",
+    "target": "L858R",
+    "hyperparam": {
+        "batchsize": 64,
+        "dropout": 0.0,
+        "fingerprint_dim": 150,
+        "lr": 2.490882414364395e-05,
+        "num_layers": 3,
+        "num_timesteps": 3,
+        "weight_decay": 3.177908575430211e-06
+    },
+    "pt_model_path":"pretrained/HER1_singletask.pt",
+    "pt_load": "fp",
+    "freeze_pt": true,
+    "overwrite": true
+}

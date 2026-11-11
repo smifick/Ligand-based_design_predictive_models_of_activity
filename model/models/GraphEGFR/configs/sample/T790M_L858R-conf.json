@@ -1,0 +1,11 @@
+{
+    "database": "LigEGFR",
+    "target": "T790M_L858R",
+    "hyperparam": {
+        "num_atom_features": 75,
+        "edge_dim": 11,
+        "num_layers": 3,
+        "fingerprint_dim": 150,
+        "num_timesteps": 3
+    }
+}
