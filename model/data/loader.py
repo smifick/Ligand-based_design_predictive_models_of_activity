@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 
-DATA_DIR = Path('../data/processed')
+DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 FEATURE_COLUMNS = ["std_smiles"]
 TARGET_COLUMN = "pIC50"
 

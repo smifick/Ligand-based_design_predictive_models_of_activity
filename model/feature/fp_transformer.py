@@ -11,6 +11,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
 from .fp_generators import (
+    FP_GENERATORS,
     FpCallable,
     FpFactory,
     make_atompair,
@@ -24,16 +25,6 @@ from .fp_generators import (
 RDLogger.DisableLog("rdApp.*")
 
 logger = logging.getLogger(__name__)
-
-FP_GENERATORS: dict[str, FpFactory] = {
-    "morgan": make_morgan,
-    "rdkit": make_rdkit,
-    "atompair": make_atompair,
-    "torsion": make_torsion,
-    "maccs": make_maccs,
-    "avalon": make_avalon,
-}
-
 
 def _resolve_fp_callable(fp_type: str, fp_params: dict) -> FpCallable:
     try:
@@ -96,6 +87,10 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
         return {} if self.fp_params is None else dict(self.fp_params)
 
     def fit(self, X, y=None):
+        if self.fp_type == "identity":
+            self.input_features_ = getattr(X, "columns", None)
+            return self
+
         probe = _smiles_to_fp("C", self.fp_type, self._fp_params())
         if probe is None:
             raise RuntimeError("Не удалось сгенерировать пробный фингерпринт.")
@@ -103,7 +98,10 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
         self.n_invalid_ = 0
         return self
 
-    def transform(self, X) -> np.ndarray:
+    def transform(self, X):
+        if self.fp_type == "identity":
+            return X
+
         check_is_fitted(self, ["n_features_"])
 
         smiles_list = self._extract_smiles(X)
@@ -137,5 +135,12 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
         return out
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
+        if self.fp_type == "identity":
+            check_is_fitted(self, ["input_features_"])
+            names = self.input_features_ if input_features is None else input_features
+            if names is None:
+                raise ValueError("Pass input_features for identity input without column names.")
+            return np.asarray(names, dtype=object)
+
         check_is_fitted(self, ["n_features_"])
         return np.array([f"{self.fp_type}_{i}" for i in range(self.n_features_)], dtype=object)

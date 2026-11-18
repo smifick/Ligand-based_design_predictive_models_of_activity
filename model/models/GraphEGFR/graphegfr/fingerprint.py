@@ -13,8 +13,8 @@ except ModuleNotFoundError:
     import pybel
 import numpy as np
 from tqdm import tqdm
-import misc.longlist as longlist
 import os
+from pathlib import Path
 
 # working_dir = os.getcwd()
 
@@ -97,6 +97,15 @@ def cdk_fingerprint(cdk, smi, fp_type="standard", size=2048, depth=6):
 
 
 def ob_fingerprint(smi, fp_type='FP2', nbit=307, output='bit'):
+    if fp_type in ("FP3", "FP4"):
+        data_dir = Path(os.environ.get("BABEL_DATADIR", ""))
+        required = ("patterns.txt", "SMARTS_InteLigand.txt")
+        if not all((data_dir / filename).is_file() for filename in required):
+            # The Windows wheel can point to the Unix-style data directory.
+            bundled = Path(pybel.__file__).resolve().parent / "bin" / "data"
+            if not all((bundled / filename).is_file() for filename in required):
+                raise FileNotFoundError("Set BABEL_DATADIR to the Open Babel fingerprint data directory.")
+            os.environ["BABEL_DATADIR"] = str(bundled)
     mol = pybel.readstring("smi", smi)
     if fp_type == 'FP2':
         fp = mol.calcfp('FP2')
@@ -184,6 +193,8 @@ def feature_engineer(df, column_name, prefix):
 
 class Fingerprint:
     def __init__(self, smi:pd.Series, save_dir, jvmpath = None, CDK_DIRPATH='misc'):
+        import misc.longlist as longlist
+
         os.makedirs(save_dir, exist_ok=True)
         # os.environ['JAVA_HOME'] = "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.181-7.b13.el7.x86_64/"
         CDK_PATH = os.path.join(CDK_DIRPATH, "PaDEL-Descriptor/lib/cdk-2.3.jar")

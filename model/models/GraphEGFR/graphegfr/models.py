@@ -1,11 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from torch_geometric.nn.models.attentive_fp import AttentiveFP
-from graphegfr.utils import isnan
-from dgllife.model.gnn import AttentiveFPGNN
-from dgllife.model.readout import AttentiveFPReadout
-from dgl import batch
+from .attentivefp import AttentiveFPGNN, AttentiveFPReadout
 
 class GraphEGFR(nn.Module):
     def __init__(self,node_feat_size: int, edge_feat_size: int,
@@ -46,36 +42,18 @@ class GraphEGFR(nn.Module):
         return x_words
 
     def forward(self, data):
-        node_features, edge_features, fpf, fpc, dgl_g = data.x, data.edge_attr, data.fpf, data.fpc, batch(data.dgl)
-        fpf = torch.reshape(fpf, (-1, self.fingfeaf))
-        fpc = torch.reshape(fpc, (-1, self.fingfeac, 1))
-        
-        fpf = list(fpf)
-        for i in range(len(fpf)):
-            fpf[i] = torch.unsqueeze(fpf[i], 0)
-        fpf = torch.cat(fpf, 0)
-
-        fpc = list(fpc)
-        for i in range(len(fpc)):
-            fpc[i] = torch.unsqueeze(fpc[i], 0)
-        fpc = torch.cat(fpc, 0)
-        
-        # Concatenate molecule and fingerprint
-        y_final = torch.Tensor().to(self.get_model_device())
+        features = []
         if self.enable_fea:
-            y_molecules = self.mol_model(dgl_g,node_features,edge_features)
-            y_final = torch.cat((y_final, y_molecules), 1)
+            features.append(self.mol_model(
+                data.edge_index, data.batch, data.num_graphs, data.x, data.edge_attr
+            ))
         if self.enable_feac:
-            Fringerc = F.relu(self.cnn1(fpc))
-            Fringerc = F.relu(self.cnn2(Fringerc))
-            Fringerc = Fringerc.squeeze(2)
-            y_final = torch.cat((y_final, Fringerc), 1)
+            fpc = data.fpc.reshape(-1, self.fingfeac, 1)
+            features.append(F.relu(self.cnn2(F.relu(self.cnn1(fpc)))).squeeze(2))
         if self.enable_feaf:
-            Fringerf = self.DNN(fpf)
-            y_final = torch.cat((y_final, Fringerf), 1)    
-        output = self.predict_property(y_final)  
-        return output
-    
+            features.append(self.DNN(data.fpf.reshape(-1, self.fingfeaf)))
+        return self.predict_property(torch.cat(features, dim=1))
+
     def get_model_device(self):
         return next(self.parameters()).device
 
@@ -89,17 +67,12 @@ class AttentiveFP_DGL(nn.Module):
                  dropout=0.):
         super().__init__()
 
-        self.gnn = AttentiveFPGNN(node_feat_size=node_feat_size,
-                                  edge_feat_size=edge_feat_size,
-                                  num_layers=num_layers,
-                                  graph_feat_size=graph_feat_size,
-                                  dropout=dropout)
-        self.readout = AttentiveFPReadout(feat_size=graph_feat_size,
-                                          num_timesteps=num_timesteps,
-                                          dropout=dropout)
-    def forward(self, g, node_feats, edge_feats, get_node_weight=False):
-        node_feats = self.gnn(g, node_feats, edge_feats)
-        return self.readout(g, node_feats, get_node_weight)
+        self.gnn = AttentiveFPGNN(node_feat_size, edge_feat_size, num_layers, graph_feat_size, dropout)
+        self.readout = AttentiveFPReadout(graph_feat_size, num_timesteps, dropout)
+
+    def forward(self, edge_index, membership, count, node_feats, edge_feats, get_node_weight=False):
+        node_feats = self.gnn(edge_index, node_feats, edge_feats)
+        return self.readout(membership, count, node_feats, get_node_weight)
 
 class ModelWrapper(object):
     def __init__(self, model, configs, optimizer=None):
@@ -154,7 +127,7 @@ class ModelWrapper(object):
         total_target=torch.Tensor([]).to(self.device)
         criterion = torch.nn.MSELoss(reduction='sum')
         for x in range(len(target_vec)):
-            masks = ~isnan(target_vec[x])
+            masks = ~torch.isnan(target_vec[x])
             #masks[x] = tmpmasks>0
             if target_vec[x][masks].nelement() == 0:
                 loss = [torch.sqrt(torch.tensor(1e-20)),torch.tensor(0.0)]

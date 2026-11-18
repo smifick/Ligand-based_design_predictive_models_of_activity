@@ -48,16 +48,6 @@ AVALON_DEFAULTS = {
     "bit_flags": 15761407,
 }
 
-DESCRIPTOR_DEFAULTS = {
-    "morgan": MORGAN_DEFAULTS,
-    "rdkit": RDKIT_DEFAULTS,
-    "atompair": ATOMPAIR_DEFAULTS,
-    "torsion": TORSION_DEFAULTS,
-    "maccs": MACCS_DEFAULTS,
-    "avalon": AVALON_DEFAULTS,
-}
-
-
 def _apply(defaults: dict, params: dict) -> dict:
     unknown = set(params) - set(defaults)
     if unknown:
@@ -140,3 +130,37 @@ def make_avalon(params: dict) -> FpCallable:
         )
 
     return _fp
+
+
+# A None factory marks the descriptor that passes the whole input through.
+_DESCRIPTOR_SPECS: dict[str, tuple[dict, FpFactory | None]] = {
+    "identity": ({}, None),
+    "morgan": (MORGAN_DEFAULTS, make_morgan),
+    "rdkit": (RDKIT_DEFAULTS, make_rdkit),
+    "atompair": (ATOMPAIR_DEFAULTS, make_atompair),
+    "torsion": (TORSION_DEFAULTS, make_torsion),
+    "maccs": (MACCS_DEFAULTS, make_maccs),
+    "avalon": (AVALON_DEFAULTS, make_avalon),
+}
+
+FP_GENERATORS: dict[str, FpFactory] = {
+    name: factory
+    for name, (_, factory) in _DESCRIPTOR_SPECS.items()
+    if factory is not None
+}
+
+DESCRIPTOR_DEFAULTS = {
+    name: defaults for name, (defaults, _) in _DESCRIPTOR_SPECS.items()
+}
+
+COMMON_DESCRIPTOR_DEFAULTS = {
+    "smiles_col": "std_smiles",
+    "n_jobs": 4,
+    "on_error": "raise",
+    "verbose": 0,
+}
+
+DESCRIPTOR_REGISTRY = {
+    name: {"name": name, "default": dict(defaults)}
+    for name, defaults in DESCRIPTOR_DEFAULTS.items()
+}

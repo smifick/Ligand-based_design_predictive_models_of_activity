@@ -5,11 +5,33 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.svm import SVR
 
-from model.feature.fp_generators import DESCRIPTOR_DEFAULTS
+from model.feature.fp_generators import (
+    COMMON_DESCRIPTOR_DEFAULTS,
+    DESCRIPTOR_DEFAULTS,
+    DESCRIPTOR_REGISTRY,
+)
 
 
 #СЛИШКОМ ПОЗДНО понял что можно просто было параметры у моделей тащить, а не вручную переписывать. Блин. Ну так можно хотя бы дефолтные настройки подогнать под наш проект
+from model.models.GraphEGFR.adapter import GraphEGFRAdapter
+
+
 MODEL_REGISTRY = {
+    "graph_egfr": {
+        "model": GraphEGFRAdapter,
+        "default": {
+            "node_feat_size": 75,
+            "edge_feat_size": 11,
+            "graph_feat_size": 200,
+            "num_layers": 2,
+            "num_timesteps": 2,
+            "dropout": 0.1,
+            "enable_fea": True,
+            "enable_feaf": False,
+            "enable_feac": False,
+            "n_tasks": 1,
+        },
+    },
     'catboost':{
         'model': CatBoostRegressor,
         'default': {
@@ -330,20 +352,4 @@ MODEL_REGISTRY = {
             "max_iter": -1,
         },
     }
-}
-
-COMMON_DESCRIPTOR_DEFAULTS = {
-    "smiles_col": "std_smiles",
-    "n_jobs": 4,
-    "on_error": "raise",
-    "verbose": 0,
-}
-
-
-DESCRIPTOR_REGISTRY = {
-    name: {
-        "name": name,
-        "default": dict(params),
-    }
-    for name, params in DESCRIPTOR_DEFAULTS.items()
 }

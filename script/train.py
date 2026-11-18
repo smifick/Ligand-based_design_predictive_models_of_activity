@@ -17,12 +17,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 requirements = REPO_ROOT / "requirements.txt"
 
-TASK_NAME = 'МОДЕЛЬ: gsSvr ДЕСКРИПТОР: morgan (((ШАБЛОН)))'
+TASK_NAME = 'МОДЕЛЬ: xgboost ДЕСКРИПТОР: rdkit (((ШАБЛОН)))'
 PROJECT_NAME = "Ligand-Activity"
 #МОДЕЛИ: catboost xgboost lightgbm random_forest svr ridge, и тоже самое с gs в начале
 SELECTION = {
-    "model": "gsSvr",
-    "descriptor": "morgan",
+    "model": "xgboost",
+    "descriptor": "rdkit",
     "seed": 67
 }
 

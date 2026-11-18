@@ -1,64 +1,52 @@
-import pathlib
-import torch
-import gc
-from typing import Optional, Union, Any
-
-from graphegfr.models import GraphEGFR
+from collections.abc import Mapping
 
 
 class GraphEGFRAdapter:
+    """Load GraphEGFR and run inference on a prepared batch."""
+
     def __init__(
-            self,
-            path_weights: str | pathlib.Path = None,
-            device: str = 'cpu',
-            **model_kwargs
+        self, path_weights=None, device="cpu", *, trusted_checkpoint=False,
+        **model_kwargs,
     ):
+        from .graphegfr.models import GraphEGFR
+
         self.device = device
-
-        self.model = GraphEGFR(**model_kwargs)
-
-        if path_weights is not None:
-            self.load_weights(path_weights)
+        if path_weights is None:
+            self.model = GraphEGFR(**model_kwargs).to(device).eval()
         else:
-            self.model.to(self.device)
+            self.load_weights(path_weights, trusted_checkpoint=trusted_checkpoint, **model_kwargs)
 
-    def load_weights(self, path: Union[str, pathlib.Path]):
+    def load_weights(self, path, *, trusted_checkpoint=False, **model_kwargs):
+        """Load a state dict or an explicitly trusted model checkpoint."""
+        import torch
 
-        path = pathlib.Path(path)
-        print(f"Загрузка весов из {path}...")
+        from .graphegfr.models import GraphEGFR
 
-        loaded_obj = torch.load(path, map_location='cpu')
+        checkpoint = torch.load(path, map_location="cpu", weights_only=not trusted_checkpoint)
+        if isinstance(checkpoint, (list, tuple)):
+            checkpoint = checkpoint[0]  # Saver in graphegfr stores [model, optimizer].
 
-        # Достаем state_dict (на случай, если авторы сохранили кортеж) поправить как веса скачаю
-        if isinstance(loaded_obj, tuple):
-            state_dict = loaded_obj[0].state_dict()
-        elif hasattr(loaded_obj, 'state_dict'):
-            state_dict = loaded_obj.state_dict()
+        if isinstance(checkpoint, GraphEGFR) and trusted_checkpoint:
+            model = checkpoint
+        elif isinstance(checkpoint, Mapping):
+            state = checkpoint.get("model_state_dict", checkpoint.get("state_dict", checkpoint))
+            state = {key.removeprefix("module."): value for key, value in state.items()}
+            if not model_kwargs and hasattr(self, "model"):
+                model = self.model
+            else:
+                model_kwargs.setdefault("fingfeaf", state["dnn1.weight"].shape[1])
+                model_kwargs.setdefault("fingfeac", state["cnn1.weight"].shape[1])
+                model = GraphEGFR(**model_kwargs)
+            model.load_state_dict(state)
         else:
-            state_dict = loaded_obj
+            raise ValueError("Expected GraphEGFR weights or a trusted GraphEGFR checkpoint")
 
-        if list(state_dict.keys())[0].startswith('module.'):
-            state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+        self.model = model.to(self.device).eval()
 
-        # Загружаем веса в модель
-        try:
-            self.model.load_state_dict(state_dict)
-            print("Веса успешно загружены!")
-        except RuntimeError as e:
-            print(f"Ошибка при загрузке весов. Возможно, архитектура не совпадает.\n{e}")
-            raise
+    def predict(self, batch):
+        """Return predictions for a batch already prepared on the model device."""
+        import torch
 
-        # Переносим модель на нужное устройство
-        self.model.to(self.device)
-
-        # Очищаем память
-        del loaded_obj, state_dict
-        gc.collect()
-
-    def predict(self, *args, **kwargs) -> Any:
         self.model.eval()
-        with torch.no_grad():
-            return self.model(*args, **kwargs)
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self.model, name)
+        with torch.inference_mode():
+            return self.model(batch)

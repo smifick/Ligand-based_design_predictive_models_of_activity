@@ -2,6 +2,47 @@
 Проектная деятельность СНО НИЯУ МИФИ
 Таблица для того, чтобы отслеживать активность: https://docs.google.com/spreadsheets/d/1qLNoeubCFvYyJ_7GTCXLU9o1kCiip3jgTxjwJ7ndlTs/edit?usp=sharing
 
+## Inference в ClearML
+
+```powershell
+python script/inference_clearml.py
+```
+
+Для локального запуска задайте `SELECTION["model_id"]` в скрипте.
+В клоне задачи ClearML задайте `Inference/model_id`. ID берётся из Model Registry
+или из Output Models задачи обучения. Загружайте joblib только из доверенных
+записей. Inference использует общий с обучением `load_data()` и сохраняет
+`metrics.json` и `predictions.csv` в ClearML Artifacts. Временные файлы отчётов
+удаляются после загрузки.
+
+### Импорт GraphEGFR
+
+Возьмите `state_dict/*.pt`, соответствующую конфигурацию обучения JSON и
+оба исходных CSV фингерпринтов из
+[репозитория GraphEGFR](https://github.com/manbaritone/GraphEGFR) и
+[опубликованного архива](https://zenodo.org/records/11122146). Скрипт выбирает
+самый свежий локальный `.pt` по времени изменения в `data/weights/graphegfr`.
+Положите рядом соответствующие файлы. Для `HER1.pt` это `HER1.json`,
+`HER1hash.csv` и `HER1nonhash.csv`. Порядок столбцов CSV сохраняется
+в предикторе. Для многозадачного чекпойнта задайте в скрипте `OUTPUT_INDEX`
+с индексом нужного выхода, начиная с нуля.
+
+Регистрация и inference GraphEGFR проверены с PyTorch 2.7.1 и Python 3.12.
+Для подготовки признаков используются RDKit с Avalon, Open Babel с Python
+bindings, JPype и Java. Для Java 8 на Windows проверен JPype 1.5.2.
+По умолчанию скрипт ищет оригинальный CDK JAR в
+`data/weights/graphegfr/cdk-2.3.jar`. Для другого пути задайте
+`GRAPHEGFR_CDK_JAR` в окружении регистрации и inference.
+
+```powershell
+python script/register_graphegfr.py
+```
+
+Скрипт прогоняет сохранённый предиктор на трёх строках SMILES, загружает его
+в ClearML и печатает Model ID для общей команды inference. Текущий общий
+датасет смешивает варианты EGFR, что следует учитывать при оценке
+конкретного выхода GraphEGFR.
+
 Что должна делать модель:
 СТРУКТУРА МОЛЕКУЛЫ  →  [ МОДЕЛЬ ]  →  ЧИСЛО (сила ингибирования EGFR)
 Сначала пишется парсер main.py, где каждая строка выводит все параметры для белка egfr, что эквивалентно  https://www.ebi.ac.uk/chembl/api/data/activity.json?target_chembl_id=CHEMBL203&standard_type=IC50&limit=100&offset=0
