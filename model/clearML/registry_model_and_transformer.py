@@ -16,7 +16,14 @@ from model.feature.fp_generators import (
 from model.models.GraphEGFR.adapter import GraphEGFRAdapter
 
 
+from model.models.RGMPNN import RGMPNNRegressor
+
+
 MODEL_REGISTRY = {
+    "rg_mpnn": {
+        "model": RGMPNNRegressor,
+        "default": RGMPNNRegressor().get_params(),
+    },
     "graph_egfr": {
         "model": GraphEGFRAdapter,
         "default": {

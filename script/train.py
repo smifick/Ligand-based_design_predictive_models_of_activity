@@ -6,6 +6,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from model.training import run_pipeline
 from copy import deepcopy
+from math import isfinite
 import joblib
 from model.clearML.clearML import init_experiment, log_results
 from clearml import Task
@@ -17,13 +18,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 requirements = REPO_ROOT / "requirements.txt"
 
-TASK_NAME = 'МОДЕЛЬ: xgboost ДЕСКРИПТОР: rdkit (((ШАБЛОН)))'
+TASK_NAME = 'МОДЕЛЬ: rg_mpnn ДЕСКРИПТОР: identity (((ШАБЛОН)))'
 PROJECT_NAME = "Ligand-Activity"
-#МОДЕЛИ: catboost xgboost lightgbm random_forest svr ridge, и тоже самое с gs в начале
+#МОДЕЛИ: catboost xgboost lightgbm random_forest svr ridge rg_mpnn, и тоже самое с gs в начале
+#FP: identity morgan 
 SELECTION = {
-    "model": "xgboost",
-    "descriptor": "rdkit",
-    "seed": 67
+    "model": "rg_mpnn",
+    "descriptor": "identity",
+    "seed": 67,
 }
 
 
@@ -67,11 +69,22 @@ def main():
     print("Validation:", val_data.shape)
     print("Test:", test_data.shape)
 
+    logger = task.get_logger()
+
+    def report_validation(epoch, metrics):
+        print(f"Epoch {epoch} validation: " + ", ".join(
+            f"{name.upper()}={value:.4f}" for name, value in metrics.items()
+        ), flush=True)
+        for name, value in metrics.items():
+            if isfinite(value):
+                logger.report_scalar("Validation per epoch", name.upper(), value, iteration=epoch)
+
     pipeline, metrics, predictions, targets = run_pipeline(
         config,
         train_data,
         val_data,
         test_data,
+        on_validation=report_validation,
     )
 
     log_results(task, metrics, targets, predictions)

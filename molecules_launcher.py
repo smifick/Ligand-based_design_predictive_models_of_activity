@@ -259,7 +259,8 @@ def main() -> None:
     with left:
         model = st.selectbox("Модель", models, key="selected_model")
     with right:
-        descriptor = st.selectbox("Дескриптор", descriptors, key="selected_descriptor")
+        model_descriptors = ["identity"] if model == "rg_mpnn" else descriptors
+        descriptor = st.selectbox("Дескриптор", model_descriptors, key="selected_descriptor")
 
     model_defaults = default_model_params(model)
     descriptor_defaults = default_descriptor_params(descriptor)

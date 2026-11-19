@@ -16,6 +16,10 @@ catboost>=1.2.8,<2
 xgboost>=2.1,<4
 lightgbm>=4.5,<5
 
+# RG-MPNN molecular graphs
+torch>=2.4,<3
+torch-geometric>=2.6,<3
+
 # Experiment tracking and launcher
 clearml>=2.0,<3
 streamlit>=1.40,<2

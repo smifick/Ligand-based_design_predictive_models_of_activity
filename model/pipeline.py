@@ -22,7 +22,12 @@ def build_pipeline(config):
         **runtime,
     )
 
-    model = create_model(config["model"])
+    model_config = config["model"]
+    if model_config["name"].lower() in {"rg_mpnn", "gsrg_mpnn"}:
+        if descriptor_config["name"] != "identity":
+            raise ValueError("RG-MPNN requires descriptor='identity' to receive SMILES")
+
+    model = create_model(model_config)
 
     return Pipeline([
         #('preprocessing', preprocessing)

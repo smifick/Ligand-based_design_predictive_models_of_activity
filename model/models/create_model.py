@@ -7,7 +7,11 @@ from sklearn.linear_model import Ridge
 from sklearn.svm import SVR
 
 
+from model.models.RGMPNN import RGMPNNRegressor
+
+
 MODEL_REGISTRY = {
+    "rg_mpnn": RGMPNNRegressor,
     "catboost": CatBoostRegressor,
     "xgboost": XGBRegressor,
     "lightgbm": LGBMRegressor,
