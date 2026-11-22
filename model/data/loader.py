@@ -36,4 +36,4 @@ def join_df(df1, df2):
     df2 = df2.reset_index(drop=True)
     df2 = df2.drop(columns=['pIC50'])
 
-    return pd.concat([df1, df2], axis=2)
+    return pd.concat([df1, df2], axis=1)
