@@ -20,12 +20,11 @@ python script/inference_clearml.py
 Возьмите `state_dict/*.pt`, соответствующую конфигурацию обучения JSON и
 оба исходных CSV фингерпринтов из
 [репозитория GraphEGFR](https://github.com/manbaritone/GraphEGFR) и
-[опубликованного архива](https://zenodo.org/records/11122146). Скрипт выбирает
-самый свежий локальный `.pt` по времени изменения в `data/weights/graphegfr`.
-Положите рядом соответствующие файлы. Для `HER1.pt` это `HER1.json`,
-`HER1hash.csv` и `HER1nonhash.csv`. Порядок столбцов CSV сохраняется
-в предикторе. Для многозадачного чекпойнта задайте в скрипте `OUTPUT_INDEX`
-с индексом нужного выхода, начиная с нуля.
+[опубликованного архива](https://zenodo.org/records/11122146). Скрипт использует
+`MTL_HER1_ALL_MT.pt` из `data/weights/graphegfr`. Рядом должны лежать
+`MTL_HER1_ALL_MT.json`, `MTL_HER1_ALL_MThash.csv` и
+`MTL_HER1_ALL_MTnonhash.csv`. Порядок столбцов CSV сохраняется в предикторе.
+Текущий `OUTPUT_INDEX = 0` соответствует HER1 (EGFR WT).
 
 Регистрация и inference GraphEGFR проверены с PyTorch 2.7.1 и Python 3.12.
 Для подготовки признаков используются RDKit с Avalon, Open Babel с Python

@@ -211,6 +211,8 @@ def main(argv: list[str] | None = None) -> dict:
         pipeline = obtain_pipeline(args.model_id, task)
         subsets = load_splits(args)
         metrics, rows = evaluate_pipeline(pipeline, subsets, get_xy, calculate_metrics)
+        rows.insert(0, "std_smiles", rows.pop("std_smiles"))
+        rows.insert(1, "clearml_model_id", args.model_id)
         files = save_results(metrics, rows, args.output_dir)
         report_to_clearml(task, metrics, files)
         print(json.dumps(to_jsonable(metrics), ensure_ascii=False, indent=2))

@@ -30,9 +30,9 @@ from model.data.loader import get_xy
 from model.evalution import calculate_metrics
 
 PROJECT_NAME = "Ligand-Activity"
-TASK_NAME = "INFERENCE: Pipeline from ClearML"
+TASK_NAME = "катбуст инференс"
 SELECTION = {
-    "model_id": "aca92ec1d4244a65b45b3b01080fb3b2",
+    "model_id": "a7853dc7dca44d5abdd4bed75f2a817b",
     "save_predictions": True,
     "save_metrics": True,
 }
@@ -95,12 +95,14 @@ def predict_splits(pipeline, datasets):
     return predictions, targets
 
 
-def build_prediction_table(datasets, targets, predictions):
+def build_prediction_table(datasets, targets, predictions, model_id):
     prediction_tables = []
     for split, frame in datasets.items():
         # Сохраняем исходные поля (SMILES, тип мутации и другие метаданные).
         report = frame.reset_index(drop=True).copy()
-        report.insert(0, "inference_split", split)
+        report.insert(0, "std_smiles", report.pop("std_smiles"))
+        report.insert(1, "clearml_model_id", model_id)
+        report.insert(2, "inference_split", split)
         report["target_pIC50"] = targets[split]
         report["prediction_pIC50"] = predictions[split]
         prediction_tables.append(report)
@@ -174,7 +176,7 @@ def main():
         metrics = calculate_metrics(targets, predictions)
         log_results(task, metrics, targets, predictions)
         prediction_table = (
-            build_prediction_table(datasets, targets, predictions)
+            build_prediction_table(datasets, targets, predictions, resolved_model_id)
             if settings["save_predictions"] else None
         )
         upload_reports(task, metrics, prediction_table, settings)
