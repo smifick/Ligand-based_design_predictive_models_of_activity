@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 requirements = REPO_ROOT / "requirements.txt"
 
-TASK_NAME = 'МОДЕЛЬ: rg_mpnn ДЕСКРИПТОР: identity (((ШАБЛОН)))'
+TASK_NAME = 'stacking МОДЕЛЬ: rg_mpnn ДЕСКРИПТОР: identity (((ШАБЛОН)))'
 PROJECT_NAME = "Ligand-Activity"
 #МОДЕЛИ: catboost xgboost lightgbm random_forest svr ridge rg_mpnn, и тоже самое с gs в начале
 #FP: identity morgan 

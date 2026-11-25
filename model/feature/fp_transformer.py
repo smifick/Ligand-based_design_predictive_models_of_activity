@@ -5,6 +5,7 @@ import logging
 from typing import Optional, Sequence
 
 import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed
 from rdkit import Chem, RDLogger
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -104,6 +105,9 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
 
         check_is_fitted(self, ["n_features_"])
 
+        is_dataframe = isinstance(X, pd.DataFrame)
+        predict_column = X["predicted_pIC50"].values if (is_dataframe and "predicted_pIC50" in X.columns) else None
+
         smiles_list = self._extract_smiles(X)
         n_features = self.n_features_
         fp_params = self._fp_params()
@@ -127,10 +131,15 @@ class SmilesToFingerprint(BaseEstimator, TransformerMixin):
         for i, r in enumerate(results):
             if r is None:
                 if self.on_error == "drop":
-                    out[i, :] = np.nan  # помечаем строку как «удалить»
-                # 'zero' и 'drop' для невалидных оставляют нули/nan
+                    out[i, :] = 0  # помечаем строку как «удалить»
                 continue
             out[i, :] = r.astype(np.uint8, copy=False)
+
+        if predict_column is not None:
+            fp_names = self.get_feature_names_out()
+            result_df = pd.DataFrame(out, columns=fp_names)
+            result_df['predicted_pIC50'] = predict_column
+            return result_df
 
         return out
 
